@@ -89,7 +89,7 @@ class _createState extends State<HomePage> {
               child: const Icon(Icons.content_copy),
               onTap: () {
                 Clipboard.setData(ClipboardData(text: task.content));
-                final snackBar = SnackBar(content: Text('Copied to clipboard'));
+                const snackBar = SnackBar(content: Text('Copied to clipboard'));
                 ScaffoldMessenger.of(context).showSnackBar(snackBar);
               },
             ),
