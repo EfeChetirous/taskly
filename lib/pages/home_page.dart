@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:taskly/models/task.dart';
 
 late double _deviceHeigh, _deviceWidth;
@@ -165,8 +166,10 @@ class _createState extends State<HomePage> {
 
   void _addNewTask() {
     if (_newTaskContent != null) {
+      String formattedDate =
+          DateFormat('yyyy-MM-dd hh:mm:ss aaa').format(DateTime.now());
       Task _task = Task(
-          content: _newTaskContent!, timeStamp: DateTime.now(), done: false);
+          content: _newTaskContent!, timeStamp: formattedDate, done: false);
       _box!.add(_task.toMap());
       setState(() {
         _newTaskContent = null;

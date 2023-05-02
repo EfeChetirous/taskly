@@ -1,6 +1,6 @@
 class Task {
   String content;
-  DateTime timeStamp;
+  String timeStamp;
   bool done;
   Task({required this.content, required this.timeStamp, required this.done});
 
