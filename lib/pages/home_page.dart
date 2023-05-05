@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:taskly/models/task.dart';
+
+import '../helper/ad_manager.dart';
 
 late double _deviceHeigh, _deviceWidth;
 
@@ -15,26 +18,49 @@ class HomePage extends StatefulWidget {
 
 class _createState extends State<HomePage> {
   _createState();
-
+  final adManager = AdManager();
   @override
   void initState() {
     super.initState();
+    adManager.addAds(false, true, false);
   }
 
+  late BannerAd _bannerAd;
   String? _newTaskContent;
   Box? _box;
-
+  BannerAd? ad;
+  // List<String> testDeviceIds = ['6422E3359E034E96B533F13D183BF66B'];
   @override
   Widget build(BuildContext context) {
+    // RequestConfiguration configuration =
+    //     RequestConfiguration(testDeviceIds: testDeviceIds);
+    // MobileAds.instance.updateRequestConfiguration(configuration);
+    adManager.loadBannerAd();
     _deviceHeigh = MediaQuery.of(context).size.height;
     _deviceWidth = MediaQuery.of(context).size.width;
+    _bannerAd = adManager.getBannerAd();
     return Scaffold(
+      bottomNavigationBar: Container(
+        height: _bannerAd.size.height.toDouble(),
+        width: _bannerAd.size.width.toDouble(),
+        child: AdWidget(ad: _bannerAd),
+      ),
       appBar: AppBar(
-        toolbarHeight: _deviceHeigh * 0.15,
-        title: const Text(
-          "Taskly!",
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 25),
+        centerTitle: true,
+        toolbarHeight: _deviceHeigh * 0.10,
+        title: Column(
+          children: const [
+            Text(
+              "Taskly,",
+              textAlign: TextAlign.left,
+              style: TextStyle(fontSize: 25),
+            ),
+            Text(
+              "It's easy to take notes!",
+              textAlign: TextAlign.left,
+              style: TextStyle(fontSize: 15),
+            ),
+          ],
         ),
         backgroundColor: Colors.amber,
       ),
@@ -64,34 +90,38 @@ class _createState extends State<HomePage> {
           var task = Task.fromMap(tasks[_index]);
 
           return ListTile(
-            title: SelectableText(
+            title: Text(
               task.content,
               style: TextStyle(
                   decoration:
                       task.done == false ? null : TextDecoration.lineThrough),
             ),
             subtitle: Text(task.timeStamp.toString()),
-            trailing: Icon(
-              task.done
-                  ? Icons.check_box_outlined
-                  : Icons.check_box_outline_blank_outlined,
-              color: Colors.amber,
-            ),
-            onTap: () {
-              task.done = !task.done;
-              _box!.putAt(_index, task.toMap());
-              setState(() {});
-            },
+            trailing: _createPopupMenuButtons(
+                task), //const Icon(Icons.more_vert), // const Icon(Icons.content_copy),
+            // onTap: () {
+            //   _createPopupMenuButtons(task);
+
+            //   setState(() {});
+            //   // Clipboard.setData(ClipboardData(text: task.content));
+            //   // const snackBar = SnackBar(content: Text('Copied to clipboard'));
+            //   // ScaffoldMessenger.of(context).showSnackBar(snackBar);
+            // },
             onLongPress: () {
               _displayDeletePopup(_index);
               setState(() {});
             },
             leading: GestureDetector(
-              child: const Icon(Icons.content_copy),
+              child: Icon(
+                task.done
+                    ? Icons.check_box_outlined
+                    : Icons.check_box_outline_blank_outlined,
+                color: Colors.amber,
+              ), //const Icon(Icons.content_copy),
               onTap: () {
-                Clipboard.setData(ClipboardData(text: task.content));
-                const snackBar = SnackBar(content: Text('Copied to clipboard'));
-                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                task.done = !task.done;
+                _box!.putAt(_index, task.toMap());
+                setState(() {});
               },
             ),
             isThreeLine: true,
@@ -104,6 +134,32 @@ class _createState extends State<HomePage> {
       onPressed: (() => _displayTaskPopup()),
       child: const Icon(Icons.add),
       backgroundColor: Colors.amber,
+    );
+  }
+
+  PopupMenuButton _createPopupMenuButtons(task) {
+    return PopupMenuButton(
+      onSelected: (value) {
+        // your logic
+      },
+      icon: const Icon(Icons.more_vert),
+      itemBuilder: (BuildContext bc) {
+        return [
+          PopupMenuItem(
+            child: const Text("Copy"),
+            value: '/hello',
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: task.content));
+              const snackBar = SnackBar(content: Text('Copied to clipboard'));
+              ScaffoldMessenger.of(context).showSnackBar(snackBar);
+            },
+          ),
+          const PopupMenuItem(
+            child: Text("Set Alarm"),
+            value: '/about',
+          )
+        ];
+      },
     );
   }
 
@@ -141,6 +197,8 @@ class _createState extends State<HomePage> {
           return AlertDialog(
             title: const Text("New Task"),
             content: TextField(
+              keyboardType: TextInputType.multiline,
+              maxLines: null,
               onSubmitted: (_value) {
                 _addNewTask();
               },
